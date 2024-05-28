@@ -19,7 +19,7 @@ ATTENTION! UNTIED tasks should not be combined with: threadprivate variables or 
 
 
 /* taskwait construct */
-/* Specifies a wait on the completion of child tasks of the current task */
+/* The encountering tast suspends its execution until all its child tasks complete */
 
 # pragma omp taskwait newline
 
