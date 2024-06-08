@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 		double local_fx;
 		int local_nt, local_nf;
 	
-		#pragma omp for private
+		#pragma omp for
 		for (trial = 0; trial < ntrials; trial++){
 		
 			/* declaration and initialization of buffer */
