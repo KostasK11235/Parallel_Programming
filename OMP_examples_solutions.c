@@ -1,5 +1,90 @@
 /* ParallelComputing_06.OpenMP3 */
 
+/* Slide 47 solution */
+int count_goo(item_t *item)
+{
+    int n = 0;
+    #pragma omp parallel
+    {
+        #pragma omp single nowait
+        {
+            while(item)
+            {
+                #pragma omp task firstprivate(item)
+                {
+                    if(is_good(item))
+                    {
+                        #pragma omp atomic
+                        n++;
+                    }
+                }
+                item = item->next;
+            }
+        }
+    }
+    return n;
+}
+
+/* More efficient code than the above */
+int count_good(item_t *item) {
+    int n = 0;
+    int P = omp_get_max_threads(); // Get the number of threads
+    int pn[P]; // Ensure P is correctly set
+
+    #pragma omp parallel
+    {
+        pn[omp_get_thread_num()] = 0;
+        #pragma omp single nowait
+        {
+            while (item) {
+                #pragma omp task firstprivate(item)
+                {
+                    if (is_good(item)) {
+                        pn[omp_get_thread_num()]++;
+                    }
+                }
+                item = item->next;
+            }
+        }
+        #pragma omp atomic
+        n += pn[omp_get_thread_num()];
+    }
+    return n;
+}
+
+/* Slide 50 solution */
+void task(double *x, double *y)
+{
+    *y = x[0]+x[1];
+}
+
+int main(int argc, char *argv[])
+{
+    double result[100];
+
+    #pragma omp parallel
+    {
+        #pragma omp single nowait
+        {
+            for(int i=0;i<100;i++)
+            {
+                #pragma omp task firstprivate(i) shared(result)
+                {
+                    double d[2];
+                    d[0] = drand48();
+                    d[1] = drand48();
+                    task(d, &result[i]);
+                }
+            }
+
+            #pragma omp taskwait
+        }        
+    }
+
+    /* print results */
+    return 0;
+}
+
 /* Slide 55 solution */
 int a[20], s;
 #pragma omp parallel num_threads(10)
@@ -7,7 +92,7 @@ int a[20], s;
     #pragma omp single nowait
     for(int i=0; i<20; i++)
     {
-        #pragma omp task
+        #pragma omp task firstprivate(i)
         {
             a[i] = func();
         }
@@ -15,8 +100,10 @@ int a[20], s;
 
     #pragma omp taskwait
     #pragma omp barrier
-    s = a[0];
-    #pragma omp for firstprivate(s)
+    
+    #pragma omp single
+        s = a[0];
+    #pragma omp for reduction(+:s)
     for(int j=1; j<20; j++) s += a[j];
 }
 

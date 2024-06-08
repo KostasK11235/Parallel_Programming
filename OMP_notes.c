@@ -19,7 +19,7 @@ ATTENTION! UNTIED tasks should not be combined with: threadprivate variables or 
 
 
 /* taskwait construct */
-/* The encountering tast suspends its execution until all its child tasks complete */
+/* The encountering task suspends its execution until all its child tasks complete */
 
 # pragma omp taskwait newline
 
@@ -99,7 +99,7 @@ lastprivate(var): Copies the value of the private variable, as assigned by the l
 # pragma omp critical {...}
 
 /* Atomic: Special case of critical section for simple instructions */
-# pragma omp Atomic
+# pragma omp atomic
 
 /* Barrier: All threads wait until each thread has reached the barrier */
 # pragma omp barrier 
