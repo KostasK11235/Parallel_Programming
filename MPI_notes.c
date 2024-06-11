@@ -170,3 +170,78 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 
 // MPI_Barrier waits for all ranks to call it
 int MPI_Barrier(MPI_Comm comm)
+
+
+/* Probing for messages */
+// wait for a matching message to arrive
+int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
+
+// check if a message has arrived. 
+// flag is nonzero if there is a message waiting
+int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
+
+// gets the number of elements in the message waiting to be received
+int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int* count)
+
+
+/* Nonblocking send and receive */
+/* These functions return immediately while communication is still going 
+#1. They behave the same way as the corresponding blocking versions but perform the communications asynchronously
+#2. They fill in an MPI_Request object that can be used to test for competition
+*/
+
+int MPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+            MPI_Comm comm, MPI_Request *request)
+
+int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+            MPI_Comm comm, MPI_Request *request)
+
+int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+            MPI_Comm comm, MPI_Request *request)
+
+int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
+            MPI_Comm comm, MPI_Request *request)
+
+
+/* Waiting for completion */
+/* We can wait for one, some or all communication requests to finish */
+int MPI_Wait(MPI_Request *request, MPI_Status *status)
+// waits for the communication to finish and fills in the status
+
+int MPI_Waitall(int count, MPI_Request array_of_requests[], 
+                MPI_Status array_of_statuses[])
+// waits for all given communications to finish and fills in the statuses
+
+int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, 
+                MPI_Status *status)
+// waits for one of the given communications to finish, sets the index to indicate
+// which one and fills in the status
+
+int MPI_Waitsome(int incount, MPI_Request array_of_requests[], 
+                int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
+// waits for at least one of the given communications to finish, sets the number
+// of communication requests that have finished, their indices and status
+
+/* Testing for completion and cancellation */
+/* Instead of waiting we can just test whether they have finished */
+int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
+// tests if the communication is finished. Sets flag to 1 and fills in the status if
+// finished or sets the flag to 0 if not finished.
+
+int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, 
+                MPI_Status array_of_statuses[])
+// test whether all given communications are finished. Sts flag to 1 and fills in 
+// the status aray if all are finished or sets the flag to 0 if not all are finished.
+
+int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, 
+                int *flag, MPI_Status *status)
+// test whether one of the given communications is finished. Sets flag to 1 and fills 
+// in the index and status if one finished or sets the flag to 0 if none is  finished.
+
+int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount, 
+                int array_of_indices[], MPI_Status array_of_statuses[])
+// tests whether some of the given communications is finished, sets the number
+// of communication requests that have finished, their indices and statuses.
+
+/* Cancel a request */
+int MPI_Cancel(MPI_Request *request)
