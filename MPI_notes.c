@@ -245,3 +245,24 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
 
 /* Cancel a request */
 int MPI_Cancel(MPI_Request *request)
+
+/* 
+Allocate a sufficiently large buffer and then pack the data into it 
+Send/Receive the packed buffer with type MPI_PACKED 
+Finally unpack it on the receiving side 
+*/
+int MPI_Pack(void *inbuf, int incount, MPI_Datatype datatype,
+void *outbuf, int outcount, int *position, MPI_Comm comm)
+// packs the data given as input into the outbuf buffer starting at a given position.
+// outcount is the size of the buffer and position gets updated to point to the first
+// free byte after packing in the data. 
+// An error is returned if the buffer is too small. 
+
+int MPI_Unpack(void *inbuf, int insize, int *position,
+void *outbuf, int outcount, MPI_Datatype datatype, MPI_Comm comm)
+// unpack data from the buffer starting at given position into the buffer outbuf.
+// position is updated to point to the location after the last byte read
+
+int MPI_Pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size)
+// returns in size an upper bound for the number of bytes needed to pack incount
+// values of type datatype. This can be used to determine the required buffer size 

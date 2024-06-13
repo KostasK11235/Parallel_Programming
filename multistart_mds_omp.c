@@ -6,6 +6,12 @@
 #include <unistd.h>
 #include <omp.h>
 
+#define _GNU_SOURCE     // Ensure feature test macro is defined before including headers
+
+#ifdef __GNUC__         // Check if using GCC or another compatible compiler
+#define _ISOC99_SOURCE  // Define _ISOC99_SOURCE for asprintf
+#endif
+
 #define MAXVARS		(250)	/* max # of variables	     */
 #define EPSMIN		(1E-6)	/* ending value of stepsize  */
 
@@ -79,6 +85,22 @@ int main(int argc, char *argv[])
 
 	double best_fx_private = best_fx; 
 
+	 int threads = 2;
+    // set the number of threads equal to the first execution argument
+    if(argc>1)
+    {
+        threads = atoi(argv[1]);
+    }
+
+    omp_set_num_threads(threads);
+    omp_set_dynamic(0);
+
+    /* save the output in a file instead of printing it */
+    FILE* output;
+    char* outputString;
+    if(0 > asprintf(&outputString, "Omp_%d.txt",threads)) perror("String formatting failed"), exit(1);
+    if((output=fopen(outputString,"w"))==NULL) perror("Error accessing the output file"), exit(1);
+
 	t0 = get_wtime();
 	#pragma omp parallel private(trial,startpt) reduction(min:best_fx_private)
 	{
@@ -132,15 +154,17 @@ int main(int argc, char *argv[])
 
 	t1 = get_wtime();
 	
-	printf("\n\nFINAL RESULTS:\n");
-	printf("Elapsed time = %.3lf s\n", t1-t0);
-	printf("Total number of trials = %d\n", ntrials);
-	printf("Total number of function evaluations = %ld\n", funevals);
-	printf("Best result at trial %d used %d iterations, %d function calls and returned\n", best_trial, best_nt, best_nf);
-	for (i = 0; i < nvars; i++) {
-		printf("x[%3d] = %15.7le \n", i, best_pt[i]);
-	}
-	printf("f(x) = %15.7le\n", best_fx);
+	fprintf(output,"FINAL RESULTS:\n");
+    fprintf(output,"#Trials = %d, #Vars = %d\n",ntrials, nvars);
+    fprintf(output,"Elapsed time = %.3lf s\n", t1-t0);
+    fprintf(output,"Total number of trials = %d\n", ntrials);
+    fprintf(output,"Total number of function evaluations = %ld\n", funevals);
+    fprintf(output,"Best result at trial %d used %d iterations, %d function calls and returned\n", best_trial, best_nt, best_nf);
+    for (i = 0; i < nvars; i++) {
+        fprintf(output,"x[%3d] = %15.7le \n", i, best_pt[i]);
+    }
+    fprintf(output,"f(x) = %15.7le\n", best_fx);
 
-	return 0;
+    free(outputString);
+    return 0;
 }

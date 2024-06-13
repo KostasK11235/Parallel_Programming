@@ -5,6 +5,12 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#define _GNU_SOURCE     // Ensure feature test macro is defined before including headers
+
+#ifdef __GNUC__         // Check if using GCC or another compatible compiler
+#define _ISOC99_SOURCE  // Define _ISOC99_SOURCE for asprintf
+#endif
+
 #define MAXVARS		(250)	/* max # of variables	     */
 #define EPSMIN		(1E-6)	/* ending value of stepsize  */
 
@@ -76,6 +82,12 @@ int main(int argc, char *argv[])
 	for (i = 0; i < MAXVARS; i++) lower[i] = -2.0;	/* lower bound: -2.0 */
 	for (i = 0; i < MAXVARS; i++) upper[i] = +2.0;	/* upper bound: +2.0 */
 
+	// saving the output in a file instead of printing them
+    FILE* output;
+	char* outputString;
+    if (0 > asprintf(&outputString,"Seq.txt")) perror("String formatting failed"), exit(1);
+    if ((output=fopen(outputString, "w"))==NULL ) perror("Error accessing output file "), exit(1);
+
 	t0 = get_wtime();
 	for (trial = 0; trial < ntrials; trial++) {
         unsigned short randBuffer[3];
@@ -113,15 +125,18 @@ int main(int argc, char *argv[])
 	}
 	t1 = get_wtime();
 
-	printf("\n\nFINAL RESULTS:\n");
-	printf("Elapsed time = %.3lf s\n", t1-t0);
-	printf("Total number of trials = %d\n", ntrials);
-	printf("Total number of function evaluations = %ld\n", funevals);
-	printf("Best result at trial %d used %d iterations, %d function calls and returned\n", best_trial, best_nt, best_nf);
-	for (i = 0; i < nvars; i++) {
-		printf("x[%3d] = %15.7le \n", i, best_pt[i]);
-	}
-	printf("f(x) = %15.7le\n", best_fx);
+	fprintf(output,"\n\nFINAL RESULTS:\n");
+    fprintf(output,"#Trials=%d, #Vars=%d\n",ntrials,nvars);
+    fprintf(output,"Elapsed time = %.3lf s\n", t1-t0);
+    fprintf(output,"Total number of trials = %d\n", ntrials);
+    fprintf(output,"Total number of function evaluations = %ld\n", funevals);
+    fprintf(output,"Best result at trial %d used %d iterations, %d function calls and returned\n", best_trial, best_nt, best_nf);
+    for (i = 0; i < nvars; i++) {
+        fprintf(output,"x[%3d] = %15.7le \n", i, best_pt[i]);
+    }
+    fprintf(output,"f(x) = %15.7le\n", best_fx);
+
+    free(outputString);
 
 	return 0;
 }
