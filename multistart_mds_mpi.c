@@ -135,11 +135,11 @@ int main(int argc, char *argv[])
             /* save the output in a file instead of printing it */
             FILE* output;
             char* outputString;
-            if(0 > asprintf(&outputString, "Omp_%d.txt",size)) perror("String formatting failed"), exit(1);
+            if(0 > asprintf(&outputString, "./Results/Mpi_%d.txt",size)) perror("String formatting failed"), exit(1);
             if((output=fopen(outputString,"w"))==NULL) perror("Error accessing the output file"), exit(1);
 
 
-            fprintf(output,"\n\nFINAL RESULTS:\n");
+            fprintf(output,"FINAL RESULTS:\n");
             fprintf(output,"#Trials = %d, #Vars = %d\n", ntrials, nvars);
             fprintf(output,"Elapsed time = %.3lf s\n", t1 - t0);
             fprintf(output,"Total number of trials = %d\n", ntrials);

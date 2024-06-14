@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	// saving the output in a file instead of printing them
     FILE* output;
 	char* outputString;
-    if (0 > asprintf(&outputString,"Seq.txt")) perror("String formatting failed"), exit(1);
+    if (0 > asprintf(&outputString,"./Results/Seq.txt")) perror("String formatting failed"), exit(1);
     if ((output=fopen(outputString, "w"))==NULL ) perror("Error accessing output file "), exit(1);
 
 	t0 = get_wtime();
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 	}
 	t1 = get_wtime();
 
-	fprintf(output,"\n\nFINAL RESULTS:\n");
+	fprintf(output,"FINAL RESULTS:\n");
     fprintf(output,"#Trials=%d, #Vars=%d\n",ntrials,nvars);
     fprintf(output,"Elapsed time = %.3lf s\n", t1-t0);
     fprintf(output,"Total number of trials = %d\n", ntrials);
