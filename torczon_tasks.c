@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-extern double f(double *x, int n);
+extern double f(double *x, int n, unsigned long *funevals);
 
 void initialize_simplex(double *u, int n, double *point, double delta) {
 	int i, j;
@@ -125,7 +125,7 @@ int inbounds_simplex(double *s, int n, double *xl, double *xr) {
 }
 
 void mds(double *point, double *endpoint, int n, double *val, double eps, int maxfevals, int maxiter, double mu,
-		double theta, double delta, int *nit, int *nf, double *xl, double *xr, int *term) {
+		double theta, double delta, int *nit, int *nf, double *xl, double *xr, int *term, unsigned long *loc_funevals) {
 	int i, j, k, found_better, iter, kec, terminate;
 	int out_of_bounds;
 	double *u, *r, *ec, *fu, *fr, *fec;
@@ -150,7 +150,7 @@ void mds(double *point, double *endpoint, int n, double *val, double eps, int ma
             for (i = 0; i < n + 1; i++) {
                 #pragma omp task firstprivate(i) shared(fu)
                 {
-                    fu[i] = f(&u[i * n], n);
+                    fu[i] = f(&u[i * n], n, loc_funevals);
                     #pragma omp atomic
                     *nf = *nf + 1;
                 }
@@ -201,7 +201,7 @@ void mds(double *point, double *endpoint, int n, double *val, double eps, int ma
                             }
                             #pragma omp task firstprivate(i) shared(fr)
                             { 
-                                fr[i] = f(&r[i * n], n);
+                                fr[i] = f(&r[i * n], n, loc_funevals);
                                 #pragma omp atomic
                                 *nf = *nf + 1;
                             }
@@ -233,7 +233,7 @@ void mds(double *point, double *endpoint, int n, double *val, double eps, int ma
                                 }
                                 #pragma omp task firstprivate(i) shared(fec)
                                 {
-                                    fec[i] = f(&ec[i * n], n);
+                                    fec[i] = f(&ec[i * n], n, loc_funevals);
                                     #pragma omp atomic
                                     *nf = *nf + 1;
                                 }
@@ -256,7 +256,7 @@ void mds(double *point, double *endpoint, int n, double *val, double eps, int ma
                             }
                             #pragma omp task firstprivate(i) shared(fec)
                             {
-                                fec[i] = f(&ec[i * n], n);
+                                fec[i] = f(&ec[i * n], n, loc_funevals);
                                 #pragma omp atomic
                                 *nf = *nf + 1;
                             }

@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
         for (i = 0; i < MAXVARS; i++) lower[i] = -2.0;  /* lower bound: -2.0 */
         for (i = 0; i < MAXVARS; i++) upper[i] = +2.0;  /* upper bound: +2.0 */
 
-         int trials_per_proc = ntrials / size;
+        int trials_per_proc = ntrials / size;
         int start_trial = rank * trials_per_proc;
         int end_trial = (rank + 1) * trials_per_proc;
 
