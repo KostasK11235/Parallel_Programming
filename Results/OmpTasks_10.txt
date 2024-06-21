@@ -1,0 +1,11 @@
+FINAL RESULTS:
+#Trials = 64, #Vars = 4
+Elapsed time = 4.235 s
+Total number of trials = 64
+Total number of function evaluations = 630556
+Best result at trial 13 used 1251 iterations, 10005 function calls and returned
+x[  0] =   8.4020996e-01
+x[  1] =   7.0621209e-01
+x[  2] =   4.9892147e-01
+x[  3] =   2.4599928e-01
+f(x) =   3.0304832e-03
