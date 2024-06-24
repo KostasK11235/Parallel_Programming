@@ -16,23 +16,24 @@
 
 /* prototype of local optimization routine, code available in torczon.c */
 extern void mds(double *startpoint, double *endpoint, int n, double *val, double eps, int maxfevals, int maxiter,
-         double mu, double theta, double delta, int *ni, int *nf, double *xl, double *xr, int *term);
+         double mu, double theta, double delta, int *ni, int *nf, double *xl, double *xr, int *term, unsigned long *loc_funevals);
 
 
 /* global variables */
 unsigned long funevals = 0;
 
 /* Rosenbrock classic parabolic valley ("banana") function */
-double f(double *x, int n)
+double f(double *x, int n, unsigned long *loc_funevals)
 {
     double fv;
     int i;
 
-    funevals++;
+    (*loc_funevals)++;
     fv = 0.0;
     for (i=0; i<n-1; i++)   /* rosenbrock */
         fv = fv + 100.0*pow((x[i+1]-x[i]*x[i]),2) + pow((x[i]-1.0),2);
-                usleep(1);      /* do not remove, introduces some artificial work */
+
+    usleep(1);      /* do not remove, introduces some artificial work */
 
     return fv;
 }
@@ -51,6 +52,12 @@ double get_wtime(void)
 
 int main(int argc, char *argv[])
 {
+        MPI_Init(&argc, &argv);
+
+        int rank, size;
+        MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+        MPI_Comm_size(MPI_COMM_WORLD,&size);
+
         /* problem parameters */
         int nvars = 4;          /* number of variables (problem dimension) */
         int ntrials = 64;       /* number of trials */
@@ -74,6 +81,7 @@ int main(int argc, char *argv[])
         int best_trial = -1;
         int best_nt = -1;
         int best_nf = -1;
+        unsigned long loc_funevals =0;
 
         /* local variables */
         int trial, i;
@@ -83,38 +91,40 @@ int main(int argc, char *argv[])
         for (i = 0; i < MAXVARS; i++) lower[i] = -2.0;  /* lower bound: -2.0 */
         for (i = 0; i < MAXVARS; i++) upper[i] = +2.0;  /* upper bound: +2.0 */
 
-        int trials_per_proc = ntrials / size;
-        int start_trial = rank * trials_per_proc;
-        int end_trial = (rank + 1) * trials_per_proc;
+        int trials_per_proc = ntrials/size;
+        int start_trial = rank*trials_per_proc;
+        int end_trial = (rank+1)*trials_per_proc;
 
-        if (rank == size - 1) {
-            end_trial = ntrials;
-        }
+        if(rank == size-1)
+                end_trial = ntrials;
 
-        t0 = get_wtime();
-        for (trial = 0; trial < ntrials; trial++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        t0 = MPI_Wtime();
+        for (trial = start_trial; trial < end_trial; trial++) 
+        {
                 unsigned short randBuffer[3];
 
                 randBuffer[0] = 0;
                 randBuffer[1] = 0;
-                randBuffer[2] = trial;
+                randBuffer[2] = trial + rank;
 
                 /* starting guess for rosenbrock test function, search space in [-2, 2) */
-                for (i = 0; i < nvars; i++) {
+                for (i = 0; i < nvars; i++) 
+                {
                         startpt[i] = lower[i] + (upper[i]-lower[i])*erand48(randBuffer);
                 }
 
                 int term = -1;
-    mds(startpt, endpt, nvars, &fx, eps, maxfevals, maxiter, mu, theta, delta,
-        &nt, &nf, lower, upper, &term);
+                mds(startpt, endpt, nvars, &fx, eps, maxfevals, maxiter, mu, theta, delta, &nt, &nf, lower, upper, &term, &loc_funevals);
 
-#if DEBUG
-                printf("\n\n\nMDS %d USED %d ITERATIONS AND %d FUNCTION CALLS, AND RETURNED\n", trial, nt, nf);
-                for (i = 0; i < nvars; i++)
-                        printf("x[%3d] = %15.7le \n", i, endpt[i]);
+                #if DEBUG
+                        printf("\n\n\nMDS %d USED %d ITERATIONS AND %d FUNCTION CALLS, AND RETURNED\n", trial, nt, nf);
+                        for (i = 0; i < nvars; i++)
+                                printf("x[%3d] = %15.7le \n", i, endpt[i]);
 
-                printf("f(x) = %15.7le\n", fx);
-#endif
+                        printf("f(x) = %15.7le\n", fx);
+                #endif
 
                 /* keep the best solution */
                 if (fx < best_fx) {
@@ -126,18 +136,19 @@ int main(int argc, char *argv[])
                                 best_pt[i] = endpt[i];
                 }
         }
-        t1 = get_wtime();
+        
+        t1 = MPI_Wtime();
 
         double global_best_fx;
-        MPI_Reduce(&best_fx, &global_best_fx, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+        MPI_Allreduce(&best_fx, &global_best_fx, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+        MPI_Allreduce(&loc_funevals, &funevals, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
-        if (rank == 0) {
+        if (best_fx == global_best_fx) {
             /* save the output in a file instead of printing it */
             FILE* output;
             char* outputString;
             if(0 > asprintf(&outputString, "./Results/Mpi_%d.txt",size)) perror("String formatting failed"), exit(1);
             if((output=fopen(outputString,"w"))==NULL) perror("Error accessing the output file"), exit(1);
-
 
             fprintf(output,"FINAL RESULTS:\n");
             fprintf(output,"#Trials = %d, #Vars = %d\n", ntrials, nvars);
