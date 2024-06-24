@@ -34,7 +34,8 @@ double f(double *x, int n, unsigned long *loc_funevals)
     fv = 0.0;
     for (i=0; i<n-1; i++)   /* rosenbrock */
         fv = fv + 100.0*pow((x[i+1]-x[i]*x[i]),2) + pow((x[i]-1.0),2);
-                usleep(1);      /* do not remove, introduces some artificial work */
+                
+    usleep(1);      /* do not remove, introduces some artificial work */
 
     return fv;
 }
@@ -104,13 +105,22 @@ int main(int argc, char *argv[])
 		perror("Error accessing the output file"), exit(1);
 
 	t0 = get_wtime();
-	#pragma omp parallel private(trial,startpt) reduction(min:best_fx_private)
+	#pragma omp parallel
 	{
+        int i, trial;
+        double startpt[MAXVARS], endpt[MAXVARS];
 		double local_fx;
 		int local_nt, local_nf;
 		unsigned long loc_funevals = 0;	// local variable for f() calls
 
-		#pragma omp for schedule(static) nowait
+        // local best results
+        double loc_best_pt[MAXVARS];
+        double loc_best_fx = 1e10;
+        int loc_best_trial = -1;
+        int loc_best_nt = -1;
+        int loc_best_nf = -1; 
+		
+        #pragma omp for schedule(static) nowait
 		for (trial = 0; trial < ntrials; trial++)
 		{
 			/* declaration and initialization of buffer */
@@ -126,8 +136,8 @@ int main(int argc, char *argv[])
 			}
 
 			int term = -1;
-			double local_endpt[MAXVARS];
-			mds(startpt, local_endpt, nvars, &local_fx, eps, maxfevals, maxiter, mu, theta, delta,
+
+			mds(startpt, endpt, nvars, &local_fx, eps, maxfevals, maxiter, mu, theta, delta,
 				&local_nt, &local_nf, lower, upper, &term, &loc_funevals);
 
 			#if DEBUG
@@ -139,22 +149,28 @@ int main(int argc, char *argv[])
 			#endif
 
 			/* keep the best solution */
-			if (local_fx < best_fx_private) 
+			if (local_fx < loc_best_fx) 
 			{
-				best_trial = trial;
-				best_nt = local_nt;
-				best_nf = local_nf;
-				best_fx_private = local_fx;
+				loc_best_trial = trial;
+				loc_best_nt = local_nt;
+				loc_best_nf = local_nf;
+				loc_best_fx = local_fx;
 				for (i = 0; i < nvars; i++)
-					best_pt[i] = local_endpt[i];
+					loc_best_pt[i] = endpt[i];
 			}
 		}
 	
 		#pragma omp critical
 		{
-			if(best_fx_private<best_fx)
-				best_fx = best_fx_private;
-
+			if(loc_best_fx < best_fx)
+            {
+				best_fx = loc_best_fx;
+                best_trial = loc_best_trial;
+                best_nt = loc_best_nt;
+                best_nf = loc_best_nf;
+                for(i=0;i<nvars; i++)
+                    best_pt[i] = loc_best_pt[i];
+            }
 			funevals += loc_funevals;
 		}
 	}
