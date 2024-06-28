@@ -96,9 +96,10 @@ int a[20], s;
         {
             a[i] = func();
         }
+
+        #pragma omp taskwait
     }
 
-    #pragma omp taskwait
     #pragma omp barrier
     
     #pragma omp single
@@ -132,7 +133,7 @@ for(int i=0; i<N; i++)
     #pragma omp for
     for(int i=0; i<N; i++)
     {
-        #pragma omp single
+        #pragma omp single nowait
         {
             for(int j=0;j<N;j++)
             {
@@ -141,8 +142,8 @@ for(int i=0; i<N; i++)
                     A[i][j] = func(i,j);
                 }
             }
+            #pragma omp taskwait
         }
-        #pragma omp taskwait
     }
 }
 
@@ -167,7 +168,67 @@ for(int i=0; i<N; i++)
                         a[i][j] = func(i, j);
                 }
             }
+            #pragma omp taskwait    
         }
-        #pragma omp taskwait
     }
+}
+
+/* OPEN MP - I */
+/* SLIDE 56 */
+#define N 1024
+
+#pragma omp parallel for schedule(static)
+for(int i=0;i<N;i++)
+{
+    a[i] = a[i] + b[i];
+}
+
+/* SLIDE 58 */
+#pragma omp parallel num_threads(3)
+#pragma omp sections
+{
+    #pragma omp section
+    V = alpha();
+    #pragma omp section
+    W = beta();
+    #pragma omp section 
+    Y = delta();
+} 
+
+X = gamma(V,W);
+printf("%f\n", epsilon(X,Y));
+
+/* SLIDE 61 */
+long num_steps = 100000;
+double step;
+
+void main()
+{
+    double x, pi, sum = 0.0;
+    step = 1.0/(double) num_steps;
+
+    #pragma omp parallel for private(x) schedule(dynamic) reduction(+:sum)
+    for(int i=0;i<num_steps; i++)
+    {
+        x = (i+0.5)*step;
+        sum = sum + 4.0/(1.0+x*x);
+    }
+    pi = step*sum;
+    printf("Pi is %lf\n", pi);
+}
+
+/* OPEN MP - II */
+/* SLIDE 49 */
+int A[N], B[N];
+int auxdot = 0, dot = 0;
+
+#pragma omp parallel
+{
+    int loc = 0;
+    #pragma omp for
+    for(int i=0; i<N; i++)
+        loc += A[i]*B[i]
+
+    #pragma omp critical
+        dot += loc;
 }

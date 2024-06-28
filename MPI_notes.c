@@ -1,3 +1,10 @@
+/* GENERAL INFORMATION ABOUT MPI */
+Strong scaling  : keep the problem size constant as you increase the number of CPU cores p
+Week scaling    : constant work per processing unit, increase the problem size with the number of CPU cores P
+
+Works on distributed memory, shared memory and hybrid systems
+
+
 /*
 To run on server:
 moduel load mpi/mpich-x86_64
@@ -40,6 +47,27 @@ int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MP
                posted the matching receive */
 int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 
+/* Nonblocking send and receive */
+/* These functions return immediately while communication is still going 
+#1. They behave the same way as the corresponding blocking versions but perform the communications asynchronously
+#2. They fill in an MPI_Request object that can be used to test for competition
+*/
+
+/* Not necessarily asynchronous. You can NOT reuse the send buffer until either a successful 
+, wait/test or you KNOW that the message has been received. An immediate send must return to 
+the user without requiring a matching receive at the destination */
+int MPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+            MPI_Comm comm, MPI_Request *request)
+
+int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+            MPI_Comm comm, MPI_Request *request)
+
+/* Synchronous nonblocking. A wait/test will complete only when the matching receive is posted. */
+int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+            MPI_Comm comm, MPI_Request *request)
+
+int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
+            MPI_Comm comm, MPI_Request *request)
 
 /* blocking receive: returns once the message has been received.
 the status object can be queried for more information about the message */
@@ -54,6 +82,18 @@ int MPI_Recv(void* buf, int count, MPI_Datatype_type, int source, int tag, MPI_C
     MPI_ANY_SOURCE can be used as wildcard.
 #4. The buffer size on the receiving side is the allocated memory, 
     and thus the maximum message size that can be received. Not necessarily the actual size.
+
+
+/* Probing for messages */
+// wait for a matching message to arrive (blocking operation)
+int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
+
+// check if a message has arrived (non-blocking operation)
+// flag is nonzero if there is a message waiting
+int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
+
+// gets the number of elements in the message waiting to be received
+int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int* count)
 
 
 /* Stores the number of processes in the communicator MPI_COMM_WORLD in the variable size */
@@ -170,38 +210,6 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
 
 // MPI_Barrier waits for all ranks to call it
 int MPI_Barrier(MPI_Comm comm)
-
-
-/* Probing for messages */
-// wait for a matching message to arrive
-int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
-
-// check if a message has arrived. 
-// flag is nonzero if there is a message waiting
-int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status)
-
-// gets the number of elements in the message waiting to be received
-int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int* count)
-
-
-/* Nonblocking send and receive */
-/* These functions return immediately while communication is still going 
-#1. They behave the same way as the corresponding blocking versions but perform the communications asynchronously
-#2. They fill in an MPI_Request object that can be used to test for competition
-*/
-
-int MPI_Issend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
-            MPI_Comm comm, MPI_Request *request)
-
-int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
-            MPI_Comm comm, MPI_Request *request)
-
-int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
-            MPI_Comm comm, MPI_Request *request)
-
-int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
-            MPI_Comm comm, MPI_Request *request)
-
 
 /* Waiting for completion */
 /* We can wait for one, some or all communication requests to finish */

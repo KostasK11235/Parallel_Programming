@@ -1,3 +1,18 @@
+/* GENERAL INFORMATION ABOUT OMP !!! */
+- Suitable for shared memory platforms
+- Three primary components: 
+        1. compiler directives - instruct the compiler to generate multithreaded code
+        2. library calls
+        3. ENVIRONMENT variables
+- FORK-JOIN type of parallelism
+- Threads communicate through shared variables
+- 5 categories of directives:
+        1. Parallel regions
+        2. Worksharing
+        3. Data Environment
+        4. Synchronization
+        5. Runtime functions & environment variables
+
 /* Task construct in C/C++ */
 /* Spawns tasks and puts them into a queue for the threads to work on */
 
